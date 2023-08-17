@@ -1,6 +1,7 @@
 import '@/app/globals.css';
 import background from '@/images/game/background.png';
 import NavBar from '@/components/navbar/GameNavBar';
+import ReduxProvider from '@/components/ReduxProvider';
 
 export const metadata = {
   title: 'Create Next App',
@@ -17,23 +18,23 @@ export default function RootLayout(props: {
     <html lang="en">
       <body>
         <main
-          className="bg-background items-center flex flex-col w-screen h-screen"
+          className="flex flex-col h-screen bg-background"
           style={{
             backgroundImage: `url(${background.src})`,
             backgroundSize: 'cover',
           }}
         >
-          <NavBar />
-          <div className="grid grid-cols-4 grid-rows-2 gap-2 p-2 w-full h-full">
-            <div className="row-span-2">{props.leftWindow}</div>
-            <div className="col-span-2">{props.children}</div>
-            <div className="col-span-2 col-start-2 row-start-2">
-              {props.chat}
+          <ReduxProvider>
+            <NavBar />
+            <div className="flex flex-1 flex-row gap-2 p-2">
+              <div className="w-1/4">{props.leftWindow}</div>
+              <div className="flex flex-col gap-2 w-2/4">
+                <div className="h-1/2">{props.children}</div>
+                <div className="h-1/2">{props.chat}</div>
+              </div>
+              <div className="w-1/4">{props.rightWindow}</div>
             </div>
-            <div className="row-span-2 col-start-4 row-start-1">
-              {props.rightWindow}
-            </div>
-          </div>
+          </ReduxProvider>
         </main>
       </body>
     </html>

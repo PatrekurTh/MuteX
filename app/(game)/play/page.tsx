@@ -1,17 +1,28 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+'use client';
+
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { redirect } from 'next/navigation';
+import { useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { getActivityState } from '@/store/slices/activitySlice';
 
-export default async function Play() {
-  const supabase = createServerComponentClient({ cookies });
+export default function Play() {
+  const supabase = createClientComponentClient();
+  const { activity } = useSelector(getActivityState);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  useEffect(() => {
+    const getSesh = async () => {
+      const session = await supabase.auth.getSession();
+      if (!session) {
+        redirect('/login');
+      }
+    };
+    getSesh();
+  }, [supabase.auth]);
 
-  if (!user) {
-    redirect('/login');
-  }
-
-  return <div className="card bg-accent/75 shadow-xl h-full p-4">Game</div>;
+  return (
+    <div className="h-full card bg-accent/75 shadow-xl p-4">
+      Game doing {activity}
+    </div>
+  );
 }

@@ -1,48 +1,138 @@
+'use client';
+
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+
+interface Message {
+  id: number;
+  author: string;
+  message: string;
+  time: string;
+}
+
 export default function Chat() {
+  const client = createClientComponentClient();
+  const [messages, setMessages] = useState<Array<Message>>([]);
+  const [userMessage, setUserMessage] = useState<string>('');
+  const [user, setUser] = useState<string>('');
+  const chatContainerRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const getMessages = async () => {
+      const { data } = await client.from('messages').select('*').order('id');
+      setMessages(data as Message[]);
+      scrollToBot();
+    };
+
+    const subscribeToMessages = () => {
+      client
+        .channel('table-db-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+          },
+          payload => {
+            console.log('payload');
+            setMessages([...messages, payload.new as Message]);
+            scrollToBot();
+          },
+        )
+        .subscribe();
+    };
+
+    const scrollToBot = () => {
+      const chatContainer = chatContainerRef.current;
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    };
+
+    const getUserName = async () => {
+      const { data, error } = await client.auth.getUser();
+      if (error) {
+        console.log(error);
+        return;
+      }
+      setUser(data.user.email!);
+    };
+
+    getMessages();
+    subscribeToMessages();
+    getUserName();
+  });
+
+  const sendMessage = async (author: string, message: string) => {
+    const { data, error } = await client
+      .from('messages')
+      .insert({ author, message })
+      .select();
+
+    setUserMessage('');
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+    console.log(data);
+  };
+
   return (
-    <div className="card bg-secondary/80 shadow-xl p-4 h-full">
-      <div className="card-body max-h-full p-4 max-w-full">
-        <div className="chat chat-start">
-          <div className="chat-header">
-            Obi-Wan Kenobi
-            <time className="text-xs opacity-80 mx-4">2 hours ago</time>
-          </div>
-          <div className="chat-bubble">You were the Chosen One!</div>
-        </div>
-        <div className="chat chat-start">
-          <div className="chat-header">
-            Obi-Wan Kenobi
-            <time className="text-xs opacity-80 mx-4">2 hours ago</time>
-          </div>
-          <div className="chat-bubble">What kind of nonsense is this</div>
-        </div>
-        <div className="chat chat-start">
-          <div className="chat-header">
-            Obi-Wan Kenobi
-            <time className="text-xs opacity-80 mx-4">2 hours ago</time>
-          </div>
-          <div className="chat-bubble">
-            That&apos;s never been done in the history of the Jedi. It&apos;s
-            insulting!
-          </div>
-        </div>
-        <div className="chat chat-end">
-          <div className="chat-header">
-            <time className="text-xs opacity-80 mx-4">2 hours ago</time>
-            Admin
-          </div>
-          <div className="chat-bubble chat-bubble-info">
-            4 Hours until server reset!
-          </div>
-        </div>
+    <div className="h-full card bg-secondary/80 shadow-xl p-4">
+      <div className="bg-accent/50 rounded-tl-lg rounded-tr-lg p-2">
+        <h2 className="text-primary text-center text-lg font-semibold">Chat</h2>
       </div>
-      <div className="">
+      <div
+        className="card-body max-h-80 p-0 overflow-y-auto"
+        ref={chatContainerRef}
+      >
+        {messages.map(chat => (
+          <ChatBubble
+            key={chat.id}
+            author={chat.author}
+            time={chat.time}
+            msg={chat.message}
+          />
+        ))}
+      </div>
+      <div className="mt-2">
         <input
-          type="text"
-          placeholder="Type here"
-          className="input input-primary w-full bottom-0 static"
+          value={userMessage}
+          className="input input-primary w-full"
+          onChange={e => setUserMessage(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              sendMessage(user, userMessage);
+            }
+          }}
         />
       </div>
+    </div>
+  );
+}
+
+function ChatBubble({
+  author,
+  time,
+  msg,
+}: {
+  author: string;
+  time: string;
+  msg: string;
+}) {
+  const isAdmin: boolean = author === 'Admin';
+
+  return (
+    <div className={isAdmin ? 'chat chat-end' : 'chat chat-start'}>
+      <div className="chat-header">
+        {!isAdmin && author}
+        <time className="text-xs opacity-80 mx-4">{time}</time>
+        {isAdmin && author}
+      </div>
+      <div className="chat-bubble">{msg}</div>
     </div>
   );
 }

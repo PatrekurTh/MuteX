@@ -1,15 +1,13 @@
+'use client';
+
 import Link from 'next/link';
-import Avatar from './Avatar';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import LogoutButton from '../LogoutButton';
+import { useSelector } from '@/store/store';
+import { getActivityState } from '@/store/slices/activitySlice';
 
-export default async function NavBar() {
-  const supabase = createServerComponentClient({ cookies });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function NavBar() {
+  const { activity } = useSelector(getActivityState);
 
   return (
     <nav className="navbar sticky top-0 bg-accent/75 text-neutral-content">
@@ -19,31 +17,11 @@ export default async function NavBar() {
         </Link>
       </div>
       <div className="navbar-center">
-        <ul className="menu menu-horizontal px-1">
-          <li>
-            <Link href="/news" className="text-primary font-semibold text-lg">
-              Stats
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/updates"
-              className="text-primary font-semibold text-lg"
-            >
-              Here
-            </Link>
-          </li>
-          <li>
-            <Link href="/rules" className="text-primary font-semibold text-lg">
-              Maybe
-            </Link>
-          </li>
-          <li>
-            <Link href="/wiki" className="text-primary font-semibold text-lg">
-              IDNO
-            </Link>
-          </li>
-        </ul>
+        <div className="rounded-bl-lg rounded-br-lg bg-primary/75 px-4 py-2 -mt-8">
+          <p className="text-lg font-semibold text-accent">
+            Currently Doing: {activity}
+          </p>
+        </div>
       </div>
       <div className="navbar-end">
         <div className="btn btn-primary">
