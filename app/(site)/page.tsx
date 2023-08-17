@@ -8,7 +8,7 @@ export default function Index() {
   );
 }
 
-import Hero from '@/components/index/Hero';
+import Hero from '@/components/site/Hero';
 
 function HomePage() {
   return (

@@ -1,8 +1,13 @@
 'use client';
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import {
+  RegExpMatcher,
+  TextCensor,
+  englishDataset,
+  englishRecommendedTransformers,
+} from 'obscenity';
 
 interface Message {
   id: number;
@@ -17,6 +22,11 @@ export default function Chat() {
   const [userMessage, setUserMessage] = useState<string>('');
   const [user, setUser] = useState<string>('');
   const chatContainerRef = useRef<HTMLInputElement>(null);
+  const matcher = new RegExpMatcher({
+    ...englishDataset.build(),
+    ...englishRecommendedTransformers,
+  });
+  const censor = new TextCensor();
 
   useEffect(() => {
     const getMessages = async () => {
@@ -63,12 +73,14 @@ export default function Chat() {
     getMessages();
     subscribeToMessages();
     getUserName();
-  });
+  }, [client, messages]);
 
-  const sendMessage = async (author: string, message: string) => {
+  const sendMessage = async () => {
+    const matches = matcher.getAllMatches(userMessage);
+    const cleanMessage = censor.applyTo(userMessage, matches);
     const { data, error } = await client
       .from('messages')
-      .insert({ author, message })
+      .insert({ author: user, message: cleanMessage })
       .select();
 
     setUserMessage('');
@@ -105,7 +117,7 @@ export default function Chat() {
           onChange={e => setUserMessage(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') {
-              sendMessage(user, userMessage);
+              sendMessage();
             }
           }}
         />

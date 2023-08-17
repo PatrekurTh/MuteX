@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import hero from '@/images/index/hero.png';
+import hero from '@/images/site/hero.png';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 

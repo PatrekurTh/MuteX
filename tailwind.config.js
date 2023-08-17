@@ -22,21 +22,13 @@ module.exports = {
       {
         mytheme: {
           primary: '#3b82f6',
-
           secondary: '#1e3a8a',
-
           accent: '#dbeafe',
-
           neutral: '#d1d5db',
-
           'base-100': '#1e3a8a',
-
           info: '#6d28d9',
-
           success: '#065f46',
-
           warning: '#a16207',
-
           error: '#881337',
         },
       },
