@@ -1,7 +1,12 @@
 'use client';
 
+// Import Supabase client component creation function from '@supabase/auth-helpers-nextjs'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
+// Import React hooks for side effects, state, and refs
 import { useEffect, useRef, useState } from 'react';
+
+// Import classes and functions from 'obscenity' library for text matching and censoring
 import {
   RegExpMatcher,
   TextCensor,
@@ -9,6 +14,11 @@ import {
   englishRecommendedTransformers,
 } from 'obscenity';
 
+// Import the ChatBubble component from the specified path
+import ChatBubble from '@/components/game/chat/ChatBubble';
+import Image from 'next/image';
+
+// TODO: get from generated db types
 interface Message {
   id: number;
   author: string;
@@ -16,23 +26,30 @@ interface Message {
   time: string;
 }
 
+const matcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
+const censor = new TextCensor();
+
 export default function Chat() {
-  const client = createClientComponentClient();
   const [messages, setMessages] = useState<Array<Message>>([]);
   const [userMessage, setUserMessage] = useState<string>('');
   const [user, setUser] = useState<string>('');
   const chatContainerRef = useRef<HTMLInputElement>(null);
-  const matcher = new RegExpMatcher({
-    ...englishDataset.build(),
-    ...englishRecommendedTransformers,
-  });
-  const censor = new TextCensor();
+  const client = createClientComponentClient();
+
+  const scrollToBot = () => {
+    const chatContainer = chatContainerRef.current;
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  };
 
   useEffect(() => {
     const getMessages = async () => {
       const { data } = await client.from('messages').select('*').order('id');
       setMessages(data as Message[]);
-      scrollToBot();
     };
 
     const subscribeToMessages = () => {
@@ -46,19 +63,13 @@ export default function Chat() {
             table: 'messages',
           },
           payload => {
-            console.log('payload');
-            setMessages([...messages, payload.new as Message]);
-            scrollToBot();
+            setMessages(prevMessages => [
+              ...prevMessages,
+              payload.new as Message,
+            ]);
           },
         )
         .subscribe();
-    };
-
-    const scrollToBot = () => {
-      const chatContainer = chatContainerRef.current;
-      if (chatContainer) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }
     };
 
     const getUserName = async () => {
@@ -73,9 +84,22 @@ export default function Chat() {
     getMessages();
     subscribeToMessages();
     getUserName();
-  }, [client, messages]);
+
+    return () => {
+      client.channel('table-db-changes').unsubscribe();
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    scrollToBot();
+  }, [messages]);
 
   const sendMessage = async () => {
+    if (!userMessage) {
+      return;
+    }
     const matches = matcher.getAllMatches(userMessage);
     const cleanMessage = censor.applyTo(userMessage, matches);
     const { data, error } = await client
@@ -89,7 +113,6 @@ export default function Chat() {
       console.log(error);
       return;
     }
-    console.log(data);
   };
 
   return (
@@ -111,7 +134,30 @@ export default function Chat() {
         ))}
       </div>
       <div className="mt-2">
-        <input
+        {/* <div className="form-control w-full"> */}
+        <div className="input-group">
+          <input
+            type="text"
+            value={userMessage}
+            onChange={e => setUserMessage(e.target.value)}
+            className="input input-bordered w-full"
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                sendMessage();
+              }
+            }}
+          />
+          <button className="btn btn-square btn-accent" onClick={sendMessage}>
+            <Image
+              src="https://vyhtnebvbpatwaohzygc.supabase.co/storage/v1/object/public/game/chat/send-alt-2-svgrepo-com.svg"
+              alt="send"
+              width="32"
+              height="32"
+            />
+          </button>
+        </div>
+      </div>
+      {/* <input
           value={userMessage}
           className="input input-primary w-full"
           onChange={e => setUserMessage(e.target.value)}
@@ -120,31 +166,8 @@ export default function Chat() {
               sendMessage();
             }
           }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ChatBubble({
-  author,
-  time,
-  msg,
-}: {
-  author: string;
-  time: string;
-  msg: string;
-}) {
-  const isAdmin: boolean = author === 'Admin';
-
-  return (
-    <div className={isAdmin ? 'chat chat-end' : 'chat chat-start'}>
-      <div className="chat-header">
-        {!isAdmin && author}
-        <time className="text-xs opacity-80 mx-4">{time}</time>
-        {isAdmin && author}
-      </div>
-      <div className="chat-bubble">{msg}</div>
+        /> */}
+      {/* </div> */}
     </div>
   );
 }
