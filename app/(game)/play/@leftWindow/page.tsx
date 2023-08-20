@@ -29,7 +29,7 @@ const skills = [
   },
 ];
 
-interface Skill {
+interface Activity {
   id: number;
   name: string;
   icon_image: string;
@@ -37,20 +37,20 @@ interface Skill {
 
 export default function LeftWindow() {
   const dispatch = useDispatch();
-  const [skills, setSkills] = useState<Array<Skill>>([]);
+  const [skills, setSkills] = useState<Array<Activity>>([]);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    const getSkills = async () => {
-      const { data, error } = await supabase.from('skills').select('*');
+    const getActivities = async () => {
+      const { data, error } = await supabase.from('activities').select('*');
       if (error) {
-        console.log(error);
-        return;
+        throw error;
       }
-      setSkills(data as Array<Skill>);
+      setSkills(data as Array<Activity>);
     };
-    getSkills();
-  }, [supabase]);
+    getActivities();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="card bg-secondary/60 shadow-xl h-full p-4">

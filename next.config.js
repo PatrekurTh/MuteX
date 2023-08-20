@@ -5,6 +5,9 @@ const nextConfig = {
     appDir: true,
     serverActions: true,
   },
+  images: {
+    domains: ['picsum.photos'],
+  },
 };
 
 module.exports = nextConfig;

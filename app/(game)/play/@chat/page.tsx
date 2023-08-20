@@ -134,7 +134,6 @@ export default function Chat() {
         ))}
       </div>
       <div className="mt-2">
-        {/* <div className="form-control w-full"> */}
         <div className="input-group">
           <input
             type="text"
@@ -157,17 +156,6 @@ export default function Chat() {
           </button>
         </div>
       </div>
-      {/* <input
-          value={userMessage}
-          className="input input-primary w-full"
-          onChange={e => setUserMessage(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              sendMessage();
-            }
-          }}
-        /> */}
-      {/* </div> */}
     </div>
   );
 }

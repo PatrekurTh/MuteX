@@ -1,28 +1,31 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { redirect } from 'next/navigation';
-import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { getActivityState } from '@/store/slices/activitySlice';
+import { ActivityRenderer } from '@/components/game/ActivityRenderer';
+import { useEffect } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export default function Play() {
-  const supabase = createClientComponentClient();
   const { activity } = useSelector(getActivityState);
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
-    const getSesh = async () => {
-      const session = await supabase.auth.getSession();
-      if (!session) {
-        redirect('/login');
-      }
+    const exitingFunction = async () => {
+      await supabase.from('tmp').insert([{ test: 'test' }]);
+      console.log('exiting');
     };
-    getSesh();
-  }, [supabase.auth]);
+
+    window.onbeforeunload = exitingFunction;
+
+    return () => {
+      window.onbeforeunload = null;
+    };
+  }, []);
 
   return (
     <div className="h-full card bg-accent/75 shadow-xl p-4">
-      Game doing {activity}
+      <ActivityRenderer activity={activity} />
     </div>
   );
 }
